@@ -2,14 +2,15 @@
 
 namespace Panelis\Database\Jobs;
 
-use App\Enums\Disk;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Panelis\Database\Enums\Disk;
 
 class UploadToCloud implements ShouldQueue
 {
@@ -18,7 +19,7 @@ class UploadToCloud implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct(private readonly string $path)
+    public function __construct(private readonly string $relativePath)
     {
         //
     }
@@ -28,24 +29,25 @@ class UploadToCloud implements ShouldQueue
      */
     public function handle(): void
     {
-        $driver = config('database.cloud_storage');
-        if (empty($driver)) {
-            return;
-        }
-
-        [$time, $ext] = explode('.', basename($this->path), 2);
+        [$time, $ext] = explode('.', basename($this->relativePath), 2);
         $name = Carbon::createFromTimestamp($time)
             ->timezone(get_timezone())
             ->format('Y-m-d_H-i');
         $name = sprintf('%s-%s.%s', app()->environment(), $name, $ext);
 
-        $db = Storage::disk(Disk::Local)->get($this->path);
+        $local = Storage::disk(Disk::Local);
+        if (! $local->exists($this->relativePath)) {
+            Log::warning('Database file not found', [
+                'path' => $this->relativePath,
+            ]);
 
-        Storage::disk(config('database.cloud_storage'))->put($name, $db);
-    }
+            return;
+        }
 
-    public function getPath(): string
-    {
-        return $this->path;
+        $stream = Storage::disk(Disk::Local)->readStream($this->relativePath);
+
+        $x = Storage::put($name, $stream);
+
+        fclose($stream);
     }
 }

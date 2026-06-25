@@ -2,7 +2,6 @@
 
 namespace Panelis\Database\Panel\Clusters\Databases\Pages;
 
-use App\Enums\Disk;
 use Carbon\Carbon;
 use Exception;
 use Filament\Actions\Action;
@@ -18,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Number;
 use Panelis\Database\Actions\Download;
+use Panelis\Database\Enums\Disk;
 use Panelis\Database\Panel\Clusters\Databases;
 use Panelis\Database\Panel\Clusters\Databases\Enums\DatabasePermission;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -51,10 +51,12 @@ class Backup extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $storage = Storage::disk(Disk::Local);
+
         return $table
-            ->records(function (): array {
-                return collect(Storage::disk('local')->allFiles('database'))
-                    ->map(function ($file): array {
+            ->records(function () use ($storage): array {
+                return collect($storage->allFiles('database'))
+                    ->map(function ($file) use ($storage): array {
                         [$name, $ext] = explode('.', basename($file), 2);
 
                         $createdAt = Carbon::createFromTimestamp(intval($name));
@@ -64,7 +66,7 @@ class Backup extends Page implements HasTable
                             'path' => $file,
                             'name' => sprintf('%s.%s', $name, $ext),
                             'extension' => $ext,
-                            'size' => Storage::size($file),
+                            'size' => $storage->size($file),
                             'created_at' => $createdAt,
                         ];
                     })
@@ -119,7 +121,7 @@ class Backup extends Page implements HasTable
                         }
 
                         try {
-                            $storage = Storage::disk('local');
+                            $storage = Storage::disk(Disk::Local);
                             $storage->delete($record['path']);
 
                             Notification::make()

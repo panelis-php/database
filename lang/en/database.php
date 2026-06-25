@@ -33,9 +33,10 @@ return [
     'failed_to_run_sql' => 'Failed to run SQLite backup command.',
     'backup' => 'Backup',
     'period_daily' => 'Daily',
-    'cloud_storage_dropbox' => 'Dropbox',
     'not_supported' => 'Database is not supported',
     'not_supported_reason' => 'Database driver :driver does not support auto-backup.',
+    'info' => 'Database information',
+    'upload_to_storage' => 'Upload to Storage (:storage)',
 
     'notifications' => [
         'backup' => [
@@ -48,15 +49,9 @@ return [
         ],
     ],
 
-    'dropbox' => [
-        'doc_hint' => '[Create a new :driver app](https://www.dropbox.com/developers/apps)',
-        'no_package_title' => 'Dropbox is not available',
-        'no_package_description' => 'Please install Dropbox package using command: composer require socialiteproviders/dropbox spatie/flysystem-dropbox',
-    ],
-
     'auto_backup' => [
         'label' => 'Auto-backup',
-        'section_description' => 'Configure automatic database backups and optional cloud uploads. You can schedule daily backups and connect to cloud storage like Dropbox.',
+        'section_description' => 'Configure automatic database backups and optional cloud uploads. You can schedule daily backups and connect to configured cloud storage.',
         'not_available' => 'Database backup is not available',
         'backed_up' => 'Database has been backed up to :path',
     ],
@@ -64,6 +59,13 @@ return [
     'file' => [
         'label' => 'Files',
         'name' => 'Name',
+    ],
+
+    'callouts' => [
+        'storage_disabled' => [
+            'title' => 'Upload to Storage Disabled',
+            'description' => 'Cloud storage is not configured. Switch the backup storage disk to a supported cloud provider to upload backups.',
+        ],
     ],
 
     'btn' => [

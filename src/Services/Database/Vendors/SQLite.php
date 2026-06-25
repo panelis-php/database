@@ -2,12 +2,12 @@
 
 namespace Panelis\Database\Services\Database\Vendors;
 
-use App\Enums\Disk;
 use BackedEnum;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Panelis\Database\Enums\Disk;
 use Panelis\Database\Services\Database\Contracts\Database;
 use Panelis\Database\Services\Database\Enums\DatabaseDriver;
 
@@ -54,13 +54,19 @@ class SQLite implements Database
         $filename = sprintf('%s.sql', Carbon::now()->timestamp);
 
         $storage = Storage::disk(Disk::Local);
+
         if (! $storage->directoryExists($dirName = 'database')) {
-            Storage::makeDirectory($dirName);
+            $storage->makeDirectory($dirName);
         }
-        $path = sprintf('%s/%s', $storage->path($dirName), $filename);
+
+        $path = sprintf('%s/%s', $dirName, $filename);
 
         $command = Process::path(database_path())
-            ->run(sprintf('sqlite3 %s .dump > %s', $database, $path));
+            ->run(sprintf(
+                'sqlite3 %s .dump > %s',
+                $database,
+                $storage->path($path),
+            ));
 
         if (! $command->successful()) {
             Log::error(__('database.failed_to_run_sql'), [

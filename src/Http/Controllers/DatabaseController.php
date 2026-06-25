@@ -1,11 +1,11 @@
 <?php
 
-namespace Panelis\Database\Controllers;
+namespace Panelis\Database\Http\Controllers;
 
-use App\Enums\Disk;
-use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Storage;
 use Panelis\Database\Actions\Download;
+use Panelis\Database\Enums\Disk;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DatabaseController extends Controller

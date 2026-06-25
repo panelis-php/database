@@ -8,7 +8,6 @@ Manage database backups directly from the Panelis admin panel.
 * Download backup files
 * Delete backup files
 * Local storage support
-* Dropbox storage support
 * Automatic Panelis plugin discovery
 
 ## Requirements
@@ -42,7 +41,7 @@ Available actions include:
 Backup files can be stored using one of the supported storage drivers:
 
 * Local
-* Dropbox
+* Storage
 
 The available storage locations can be configured through the Panelis settings panel.
 

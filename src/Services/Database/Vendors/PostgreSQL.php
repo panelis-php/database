@@ -2,12 +2,12 @@
 
 namespace Panelis\Database\Services\Database\Vendors;
 
-use App\Enums\Disk;
 use BackedEnum;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Panelis\Database\Enums\Disk;
 use Panelis\Database\Services\Database\Contracts\Database;
 use Panelis\Database\Services\Database\Enums\DatabaseDriver;
 use Throwable;
@@ -57,9 +57,8 @@ class PostgreSQL implements Database
 
         $filename = sprintf('%s.sql', Carbon::now()->timestamp);
 
-        $path = "{$directory}/{$filename}";
-
-        $absolutePath = $disk->path($path);
+        $relativePath = "{$directory}/{$filename}";
+        $absolutePath = $disk->path($relativePath);
 
         try {
             $output = Process::path(base_path())
@@ -72,7 +71,7 @@ class PostgreSQL implements Database
                     $db['port'],
                     $db['username'],
                     $db['database'],
-                    $absolutePath
+                    $absolutePath,
                 ));
 
             if (! $output->successful()) {
@@ -90,6 +89,6 @@ class PostgreSQL implements Database
             return null;
         }
 
-        return $absolutePath;
+        return $relativePath;
     }
 }
