@@ -28,11 +28,11 @@ class Backup implements ShouldQueue
     public function handle(): void
     {
         try {
-            $path = $this->database->backup();
+            $relativePath = $this->database->backup();
 
             // upload to cloud if possible
-            if ($this->data['upload_to_cloud'] ?? false) {
-                UploadToCloud::dispatch($path);
+            if ($this->data['upload_to_storage'] ?? false) {
+                UploadToCloud::dispatch($relativePath);
             }
 
             if (! empty($this->data['users'])) {

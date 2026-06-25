@@ -7,9 +7,12 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Callout;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Number;
+use Panelis\Database\Enums\Disk;
 use Panelis\Database\Panel\Clusters\Databases\Enums\DatabasePeriod;
 use Panelis\Database\Services\Database\Contracts\Database;
 use Panelis\Database\Services\Database\Enums\DatabaseDriver;
@@ -23,44 +26,49 @@ class AutoBackupForm
         }
 
         $database = data_get(config('database.connections'), config('database.default'));
+        $storage = config('filesystems.default');
 
         return [
-            TextEntry::make('database.default')
-                ->label(__('database::database.type'))
-                ->state(DatabaseDriver::tryFrom(config('database.default'))?->getLabel()),
+            Fieldset::make(__('database::database.info'))
+                ->columns(1)
+                ->schema([
+                    TextEntry::make('database.default')
+                        ->label(__('database::database.type'))
+                        ->state(DatabaseDriver::tryFrom(config('database.default'))?->getLabel()),
 
-            TextEntry::make('database.version')
-                ->label(__('database::database.version'))
-                ->state($databaseManager->getVersion()),
+                    TextEntry::make('database.version')
+                        ->label(__('database::database.version'))
+                        ->state($databaseManager->getVersion()),
 
-            TextEntry::make('database.url')
-                ->label(__('database::database.path'))
-                ->visible(fn (): bool => config('database.default') === DatabaseDriver::SQLite->value)
-                ->helperText(function (): ?string {
-                    if (config('panelis.demo', false)) {
-                        return __('database::database.hidden_in_demo');
-                    }
+                    TextEntry::make('database.url')
+                        ->label(__('database::database.path'))
+                        ->visible(fn (): bool => config('database.default') === DatabaseDriver::SQLite->value)
+                        ->helperText(function (): ?string {
+                            if (config('panelis.demo', false)) {
+                                return __('database::database.hidden_in_demo');
+                            }
 
-                    return null;
-                })
-                ->state(config('panelis.demo', false) ? '***' : $database['database'] ?? null),
+                            return null;
+                        })
+                        ->state(config('panelis.demo', false) ? '***' : $database['database'] ?? null),
+
+                    TextEntry::make('database.size')
+                        ->label(__('database::database.size'))
+                        ->visible(fn (): bool => config('database.default') === DatabaseDriver::SQLite->value)
+                        ->state(function () use ($database): ?string {
+                            if (config('database.default') === DatabaseDriver::SQLite->value) {
+                                return Number::fileSize(File::size($database['database']));
+                            }
+
+                            return null;
+                        })
+                        ->disabled(fn (Get $get): bool => ! $get('database.auto_backup_enabled')),
+                ]),
 
             Toggle::make('database.auto_backup_enabled')
                 ->label(__('database::database.backup_enabled'))
                 ->live()
                 ->disabled(fn (): bool => ! $databaseManager?->isAvailable()),
-
-            TextEntry::make('database.size')
-                ->label(__('database::database.size'))
-                ->visible(fn (): bool => config('database.default') === DatabaseDriver::SQLite->value)
-                ->state(function () use ($database): ?string {
-                    if (config('database.default') === DatabaseDriver::SQLite->value) {
-                        return Number::fileSize(File::size($database['database']));
-                    }
-
-                    return null;
-                })
-                ->disabled(fn (Get $get): bool => ! $get('database.auto_backup_enabled')),
 
             Radio::make('database.backup_period')
                 ->label(__('database::database.period'))
@@ -82,6 +90,15 @@ class AutoBackupForm
                 ->minValue(1)
                 ->required()
                 ->disabled(fn (Get $get): bool => ! $get('database.auto_backup_enabled')),
+
+            Callout::make(__('database::database.callouts.storage_disabled.title'))
+                ->description(__('database::database.callouts.storage_disabled.description'))
+                ->info()
+                ->visible(fn (Get $get): bool => $get('database.auto_backup_enabled') && $storage === Disk::Local->value),
+
+            Toggle::make('database.upload_to_storage')
+                ->label(__('database::database.upload_to_storage', ['storage' => $storage]))
+                ->disabled(fn (Get $get): bool => ! $get('database.auto_backup_enabled') || $storage === Disk::Local->value),
         ];
     }
 }

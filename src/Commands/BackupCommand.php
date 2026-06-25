@@ -8,6 +8,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Panelis\Database\Enums\Disk;
 use Panelis\Database\Jobs\UploadToCloud;
 use Panelis\Database\Services\Database\Contracts\Database;
 use Panelis\User\Models\User;
@@ -70,7 +71,7 @@ class BackupCommand extends Command
 
     protected function cleanupOldBackups(): void
     {
-        $storage = Storage::disk('local');
+        $storage = Storage::disk(Disk::Local);
         $files = collect($storage->allFiles('database'))
             ->filter(fn ($f) => str_ends_with($f, '.sql') || str_ends_with($f, '.zip'))
             ->sortBy(fn ($f) => $storage->lastModified($f))

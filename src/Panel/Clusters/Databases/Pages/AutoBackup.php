@@ -10,7 +10,6 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,11 +18,11 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Panelis\Database\Enums\Disk;
 use Panelis\Database\Jobs\Backup;
 use Panelis\Database\Panel\Clusters\Databases;
 use Panelis\Database\Panel\Clusters\Databases\Enums\DatabasePermission;
 use Panelis\Database\Panel\Clusters\Databases\Forms\AutoBackupForm;
-use Panelis\Database\Panel\Clusters\Databases\Forms\CloudBackupForm;
 use Panelis\Database\Services\Database\Contracts\Database;
 use Panelis\Database\Services\Database\Database as DatabaseManager;
 use Panelis\Database\Services\Database\Enums\DatabaseDriver;
@@ -106,18 +105,16 @@ class AutoBackup extends Page implements HasSchemas
                 ->label(__('database::database.btn.backup_now'))
                 ->hidden(! $this->isSupported)
                 ->schema([
-                    Callout::make(__('database::database.cloud_backup_disabled'))
-                        ->description(__('database::database.cloud_backup_is_disabled'))
-                        ->warning()
-                        ->visible(! config('database.cloud_backup_enabled', false)),
+                    Callout::make(__('database::database.callouts.storage_disabled.title'))
+                        ->description(__('database::database.callouts.storage_disabled.description'))
+                        ->info()
+                        ->visible(config('filesystems.default') === Disk::Local->value),
 
                     Section::make()
-                        ->visible(config('database.cloud_backup_enabled', false))
+                        ->hidden(config('filesystems.default') === Disk::Local->value)
                         ->schema([
-                            Toggle::make('upload_to_cloud')
-                                ->label(__('database::database.upload_to_cloud', [
-                                    'provider' => __(sprintf('database.cloud_storage_%s', config('database.cloud_storage'))),
-                                ])),
+                            Toggle::make('upload_to_storage')
+                                ->label(__('database::database.upload_to_storage', ['storage' => config('filesystems.default')])),
                         ]),
                 ])
                 ->requiresConfirmation()
@@ -156,18 +153,7 @@ class AutoBackup extends Page implements HasSchemas
             ],
 
             'filesystems' => [
-                'disks' => [
-                    'dropbox' => [
-                        'token' => config('filesystems.disks.dropbox.token'),
-                    ],
-                ],
-            ],
-
-            'services' => [
-                'dropbox' => [
-                    'client_id' => config('services.dropbox.client_id'),
-                    'client_secret' => config('services.dropbox.client_secret'),
-                ],
+                'default' => config('filesystems.default'),
             ],
         ]);
     }
@@ -187,16 +173,6 @@ class AutoBackup extends Page implements HasSchemas
                     ->description(__('database::database.auto_backup.section_description'))
                     ->hidden(! $this->isSupported)
                     ->schema(AutoBackupForm::schema($this->databaseContract)),
-
-                Section::make(__('database::database.cloud_backup'))
-                    ->description(__('database::database.cloud_backup_section_description'))
-                    ->collapsible()
-                    ->hidden(! $this->isSupported)
-                    ->visible(function (Get $get): bool {
-                        return user_can(DatabasePermission::Backup) && $get('database.auto_backup_enabled');
-                    })
-                    ->disabled(fn (Get $get): bool => ! $get('database.auto_backup_enabled') || config('panelis.demo', false))
-                    ->schema(CloudBackupForm::schema()),
             ])
             ->disabled(user_cannot(DatabasePermission::Edit));
     }
