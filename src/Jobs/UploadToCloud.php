@@ -50,4 +50,9 @@ class UploadToCloud implements ShouldQueue
 
         fclose($stream);
     }
+
+    public function getRelativePath(): string
+    {
+        return $this->relativePath;
+    }
 }
