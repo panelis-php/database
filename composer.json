@@ -5,6 +5,12 @@
   "keywords": [
     "panelis"
   ],
+  "authors": [
+    {
+      "name": "Yugo",
+      "email": "dedy.yugo.purwanto@gmail.com"
+    }
+  ],
   "type": "library",
   "require": {
     "lorisleiva/laravel-actions": "^2.10",
@@ -35,7 +41,10 @@
     "panelis": {
       "plugins": [
         "Panelis\\Database\\Plugins\\DatabasePlugin"
-      ]
+      ],
+      "permissions": {
+        "database": "Panelis\\Database\\Panel\\Clusters\\Databases\\Enums\\DatabasePermission"
+      }
     }
   },
   "require-dev": {

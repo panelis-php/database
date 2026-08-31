@@ -2,7 +2,10 @@
 
 namespace Panelis\Database\Panel\Clusters\Databases\Enums;
 
-enum DatabasePermission: string
+use Filament\Support\Contracts\HasLabel;
+use Illuminate\Support\Str;
+
+enum DatabasePermission: string implements HasLabel
 {
     case Browse = 'BrowseDatabase';
 
@@ -17,4 +20,9 @@ enum DatabasePermission: string
     case Backup = 'BackupDatabase';
 
     case Download = 'DownloadDatabase';
+
+    public function getLabel(): string
+    {
+        return __(sprintf('database::permission.name_%s', Str::snake($this->value)));
+    }
 }
