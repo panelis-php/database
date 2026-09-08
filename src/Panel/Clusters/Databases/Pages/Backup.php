@@ -98,8 +98,18 @@ class Backup extends Page implements HasTable
                         $storage = Storage::disk(Disk::Local);
 
                         if ($storage->exists($record['path'])) {
+                            audit('database')
+                                ->event('download')
+                                ->withProperty('file', $record['name'])
+                                ->log('database::activity.download');
+
                             return Download::run($storage, $record['path'], $record['name']);
                         }
+
+                        audit('database')
+                            ->event('download_failed')
+                            ->withProperty('file', $record['name'])
+                            ->log('database::activity.download_failed');
 
                         Notification::make()
                             ->warning()
@@ -124,6 +134,11 @@ class Backup extends Page implements HasTable
                             $storage = Storage::disk(Disk::Local);
                             $storage->delete($record['path']);
 
+                            audit('database')
+                                ->event('delete')
+                                ->withProperty('file', $record['name'])
+                                ->log('database::activity.delete');
+
                             Notification::make()
                                 ->title(__('database::database.file_deleted'))
                                 ->success()
@@ -132,6 +147,11 @@ class Backup extends Page implements HasTable
                             return;
                         } catch (Exception $e) {
                             Log::error($e);
+                            audit('database')
+                                ->event('delete_failed')
+                                ->withProperty('file', $record['name'])
+                                ->withProperty('exception', $e::class)
+                                ->log('database::activity.delete_failed');
 
                             Notification::make()
                                 ->title(__('database::database.file_not_deleted'))

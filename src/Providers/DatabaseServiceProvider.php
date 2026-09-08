@@ -15,6 +15,8 @@ class DatabaseServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->syncActivityLoggingSetting();
+
         $this->loadTranslationsFrom(__DIR__.'/../../lang', self::NAMESPACE);
 
         if ($this->app->runningInConsole()) {
@@ -34,5 +36,14 @@ class DatabaseServiceProvider extends ServiceProvider
         $this->app->singleton(Database::class, function (Application $app): Database {
             return $app->make(DatabaseManager::class)->driver(config('database.default'));
         });
+    }
+
+    private function syncActivityLoggingSetting(): void
+    {
+        $settingClass = 'Panelis\\Setting\\Models\\Setting';
+
+        if (class_exists($settingClass) && config()->has('activitylog.enabled')) {
+            config()->set('activitylog.enabled', $settingClass::get('activity.enabled', config('activitylog.enabled')));
+        }
     }
 }
