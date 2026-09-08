@@ -122,6 +122,10 @@ class AutoBackup extends Page implements HasSchemas
                     $data['users'] = [Auth::id()];
                     Backup::dispatch($this->databaseContract, $data);
 
+                    audit('database')
+                        ->event('backup_queued')
+                        ->log('database::activity.backup_queued');
+
                     Notification::make()
                         ->title(__('database::database.notifications.queue.title'))
                         ->body(__('database::database.notifications.queue.body'))
@@ -193,12 +197,21 @@ class AutoBackup extends Page implements HasSchemas
 
             event(new SettingUpdated);
 
+            audit('database')
+                ->event('update_auto_backup')
+                ->log('database::activity.update_auto_backup');
+
             Notification::make()
                 ->title(__('database::database.backup_updated'))
                 ->success()
                 ->send();
         } catch (Exception $e) {
             Log::error($e);
+
+            audit('database')
+                ->event('update_auto_backup_failed')
+                ->withProperty('exception', $e::class)
+                ->log('database::activity.update_auto_backup_failed');
 
             Notification::make()
                 ->title(__('database::database.backup_not_updated'))
